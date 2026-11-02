@@ -24,30 +24,25 @@
 <body>
 
 <header>
-  <div class="logo">Google <span>News</span> Live</div>
-  <select id="country" onchange="loadNews()" style="padding:7px;border-radius:20px;border:1px solid #ddd">
-    <option value="za">South Africa</option>
-    <option value="us" selected>Worldwide (US)</option>
-    <option value="gb">UK</option>
-  </select>
+  <div class="logo">World <span>News</span> Live</div>
   <div id="clock" style="font-size:11px;margin-left:auto"></div>
 </header>
 
 <div class="nav">
-  <button class="active" onclick="setCat('general',this)">Top Stories</button>
+  <button class="active" onclick="setCat('search',this)">Top Stories</button>
   <button onclick="setCat('world',this)">World</button>
   <button onclick="setCat('business',this)">Business</button>
   <button onclick="setCat('technology',this)">Technology</button>
-  <button onclick="setCat('sports',this)">Sports</button>
+  <button onclick="setCat('sport',this)">Sports</button>
 </div>
 
 <div id="feed">
   <div class="live">🔴 LIVE • Auto-updating every 3 mins</div>
-  <div id="status" class="live">Loading news...</div>
+  <div id="status" class="live">Loading real-time news...</div>
 </div>
 
 <script>
-let currentCat = 'general';
+let currentCat = 'search';
 
 function setCat(c, btn) {
   currentCat = c;
@@ -57,28 +52,28 @@ function setCat(c, btn) {
 }
 
 async function loadNews() {
-  const country = document.getElementById('country').value;
   const feedDiv = document.getElementById('feed');
   
-  // Using an open-access endpoint designed for browser testing to avoid CORS issues
-  const apiUrl = `https://algolia.com{encodeURIComponent(currentCat === 'general' ? 'news' : currentCat)}&tags=story`;
+  // Directly targeting the Guardian's free open-tier API which bypasses browser CORS limits smoothly
+  const apiUrl = `https://guardianapis.com{currentCat}?api-key=test&page-size=15`;
 
   try {
     let res = await fetch(apiUrl);
-    if (!res.ok) throw new Error("API Limit reached");
+    if (!res.ok) throw new Error("Fetch failed");
     let data = await res.json();
+    let articles = data.response.results;
     
-    feedDiv.innerHTML = `<div class="live">🔴 LIVE • ${currentCat.toUpperCase()} • ${country.toUpperCase()} • ${new Date().toLocaleTimeString()}</div>`;
+    feedDiv.innerHTML = `<div class="live">🔴 LIVE • ${currentCat.toUpperCase()} • ${new Date().toLocaleTimeString()}</div>`;
 
-    if (!data.hits || data.hits.length === 0) {
-      feedDiv.innerHTML += `<div class="card"><h3>No articles found for this selection. Try another category.</h3></div>`;
+    if (!articles || articles.length === 0) {
+      feedDiv.innerHTML += `<div class="card"><h3>No live updates found. Try another category tab.</h3></div>`;
       return;
     }
 
-    data.hits.slice(0, 15).forEach((item) => {
-      let title = item.title || "No title available";
-      let link = item.url || `https://google.com`;
-      let author = item.author || "Global News";
+    articles.forEach((item) => {
+      let title = item.webTitle || "No title available";
+      let link = item.webUrl || "#";
+      let section = item.sectionName || "Global News";
       
       let card = document.createElement('a');
       card.className = 'card';
@@ -88,7 +83,7 @@ async function loadNews() {
       card.innerHTML = `
         <h3>${title}</h3>
         <div class="meta">
-          <span>Source: ${author}</span>
+          <span>Category: ${section}</span>
           <span>Tap to read</span>
         </div>
       `;
@@ -97,11 +92,8 @@ async function loadNews() {
 
   } catch (err) {
     feedDiv.innerHTML = `
-      <div class="live">⚠️ Direct fetch limit reached</div>
-      <a class="card" href="https://google.com/search?q=${encodeURIComponent(currentCat)}&hl=en&gl=${country.toUpperCase()}" target="_blank" rel="noopener noreferrer">
-        <h3>Click here to view ${currentCat} news directly on Google News</h3>
-        <div class="meta"><span>External Link</span><span>Tap to open</span></div>
-      </a>
+      <div class="live">⚠️ Connection error. Click below to refresh.</div>
+      <div class="card" onclick="loadNews()"><h3>Tap here to retry connection</h3></div>
     `;
   }
 
