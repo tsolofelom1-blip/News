@@ -1,110 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>World News Live</title>
+<title>World News Live - Fixed</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{background:#f1f3f4}
-header{background:#fff;padding:12px;display:flex;gap:10px;align-items:center;position:sticky;top:0;border-bottom:1px solid #ddd}
-.logo{font-weight:700;font-size:20px} .logo span{color:#1a73e8}
-.nav{background:#fff;padding:10px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid #ddd}
-.nav button{padding:8px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer}
-.nav button.active{background:#1a73e8;color:#fff}
-#feed{max-width:700px;margin:15px auto;padding:0 10px;display:flex;flex-direction:column;gap:12px}
-.card{background:#fff;border-radius:12px;padding:12px;display:flex;gap:12px;border:1px solid #ddd}
-.card img{width:90px;height:70px;border-radius:8px;background:#eee;object-fit:cover}
-.card h3{font-size:14px;line-height:1.3}
-.live{color:#d93025;font-weight:bold;font-size:13px;margin-bottom:5px;text-align:center}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial, sans-serif}
+  body{background:#f1f3f4}
+  header{background:#fff;padding:12px;display:flex;gap:10px;align-items:center;position:sticky;top:0;border-bottom:1px solid #ddd;z-index:100}
+  .logo{font-weight:800;font-size:18px} 
+  .logo span{color:#1a73e8}
+  .nav{background:#fff;padding:10px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid #ddd}
+  .nav button{padding:8px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;white-space:nowrap}
+  .nav button.active{background:#1a73e8;color:#fff}
+  #feed{max-width:750px;margin:12px auto;padding:0 10px;display:flex;flex-direction:column;gap:10px}
+  .card{background:#fff;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;border:1px solid #e0e0e0;text-decoration:none;color:inherit;transition:box-shadow 0.2s}
+  .card:hover{box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+  .card h3{font-size:15px;color:#202124;line-data:1.4}
+  .meta{font-size:12px;color:#666;display:flex;justify-content:space-between}
+  .live{color:#d93025;font-weight:700;font-size:12px;text-align:center;padding:6px;background:#fff;border-radius:8px;border:1px solid #e0e0e0}
 </style>
 </head>
 <body>
+
 <header>
-<div class="logo">Google <span>News</span> Live</div>
-<select id="country" onchange="loadNews()" style="padding:6px;border-radius:20px;border:1px solid #ddd">
-<option value="ZA">South Africa</option>
-<option value="US">Worldwide (US)</option>
-<option value="GB">UK</option>
-<option value="NG">Nigeria</option>
-</select>
-<div id="clock" style="font-size:12px;margin-left:auto"></div>
+  <div class="logo">Google <span>News</span> Live</div>
+  <select id="country" onchange="loadNews()" style="padding:7px;border-radius:20px;border:1px solid #ddd">
+    <option value="ZA">South Africa</option>
+    <option value="US" selected>Worldwide (US)</option>
+    <option value="GB">UK</option>
+  </select>
+  <div id="clock" style="font-size:11px;margin-left:auto"></div>
 </header>
+
 <div class="nav">
-<button class="active" onclick="setCat('top',this)">Top Stories</button>
-<button onclick="setCat('world',this)">World</button>
-<button onclick="setCat('business',this)">Business</button>
-<button onclick="setCat('technology',this)">Technology</button>
-<button onclick="setCat('sports',this)">Sports</button>
+  <button class="active" onclick="setCat('',this)">Top Stories</button>
+  <button onclick="setCat('world',this)">World</button>
+  <button onclick="setCat('business',this)">Business</button>
+  <button onclick="setCat('technology',this)">Technology</button>
+  <button onclick="setCat('sports',this)">Sports</button>
 </div>
+
 <div id="feed">
-<div class="live">🔴 LIVE • Auto-updating • Worldwide</div>
-<div id="status" style="background:#fff;padding:20px;border-radius:12px;text-align:center">Loading worldwide news...</div>
+  <div class="live">🔴 LIVE • Auto-updating every 3 mins</div>
+  <div id="status" class="live">Loading news...</div>
 </div>
 
 <script>
-let currentCat = 'top';
-function setCat(c, btn){
-  currentCat=c;
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+let currentCat = '';
+
+function setCat(c, btn) {
+  currentCat = c;
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   loadNews();
 }
 
-async function loadNews(){
-  let gl = document.getElementById('country').value;
-  let topic = currentCat==='top' ? '' : currentCat;
-  let rssUrl = `https://news.google.com/rss/search?q=${topic}&hl=en&gl=${gl}&ceid=${gl}:en`;
-  let apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
-  
-  document.getElementById('status').style.display='block';
-  document.getElementById('status').innerText='Loading...';
+async function loadNews() {
+  const gl = document.getElementById('country').value;
+  const q = currentCat ? currentCat : 'top news';
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=${gl}&ceid=${gl}:en`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`;
+  const feedDiv = document.getElementById('feed');
 
-  try{
-    let res = await fetch(apiUrl);
-    let data = await res.json();
-    let xml = data.contents;
-    let doc = new DOMParser().parseFromString(xml, "text/xml");
-    let items = doc.querySelectorAll("item");
-    
-    let feed = document.getElementById('feed');
-    feed.innerHTML = `<div class="live">🔴 LIVE • ${currentCat.toUpperCase()} • ${gl} • ${new Date().toLocaleTimeString()}</div>`;
-    
-    if(items.length===0) throw "no items";
+  try {
+    let res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error("Network response was not ok");
+    let xmlText = await res.text();
+    let xmlDoc = new DOMParser().parseFromString(xmlText, "text/xml");
+    let items = xmlDoc.querySelectorAll("item");
 
-    items.forEach((item, i)=>{
-      if(i>15) return;
-      let title = item.querySelector("title").textContent;
-      let link = item.querySelector("link").textContent;
-      let card = document.createElement('div');
-      card.className='card';
-      card.innerHTML=`<img src="https://picsum.photos/seed/${i}${gl}/90/70"><div><h3>${title}</h3><div style="font-size:11px;color:#666;margin-top:4px">Google News • ${gl} • Click to read</div></div>`;
-      card.onclick=()=>window.open(link,'_blank');
-      feed.appendChild(card);
+    feedDiv.innerHTML = `<div class="live">🔴 LIVE • ${q.toUpperCase()} • ${gl} • ${new Date().toLocaleTimeString()}</div>`;
+
+    if (items.length === 0) {
+      feedDiv.innerHTML += `<div class="card"><h3>No articles found for this selection. Try another category.</h3></div>`;
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      if (idx >= 15) return;
+      let title = item.querySelector("title")?.textContent || "No title";
+      let link = item.querySelector("link")?.textContent || "https://news.google.com";
+      let pubDate = item.querySelector("pubDate")?.textContent;
+      let timeStr = pubDate ? new Date(pubDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+      let card = document.createElement('a');
+      card.className = 'card';
+      card.href = link;
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+      card.innerHTML = `
+        <h3>${title}</h3>
+        <div class="meta">
+          <span>${gl} • Google News</span>
+          <span>${timeStr}</span>
+        </div>
+      `;
+      feedDiv.appendChild(card);
     });
-    document.getElementById('status').style.display='none';
-  }catch(e){
-    console.log(e);
-    let feed = document.getElementById('feed');
-    feed.innerHTML = `<div class="live">⚠️ Google blocked feed (common). Showing demo news - retrying in 10s</div>`;
-    // SHOW SOMETHING so it never stays on Loading
-    let demo = [
-      {t:`Breaking ${currentCat} news from ${gl} - click to view on Google News`, l:`https://news.google.com/search?q=${currentCat}&hl=en&gl=${gl}`},
-      {t:`Latest ${currentCat} updates worldwide - Live`, l:`https://news.google.com`},
-      {t:`Top ${currentCat} headlines in ${gl} today`, l:`https://news.google.com`},
-    ];
-    demo.forEach((d,i)=>{
-      let card=document.createElement('div');card.className='card';
-      card.innerHTML=`<img src="https://picsum.photos/seed/demo${i}/90/70"><div><h3>${d.t}</h3><div style="font-size:11px;color:#666">Demo • Tap to open Google News</div></div>`;
-      card.onclick=()=>window.open(d.l,'_blank');
-      feed.appendChild(card);
-    });
+
+  } catch (err) {
+    feedDiv.innerHTML = `
+      <div class="live">⚠️ Direct RSS fetch blocked by CORS or network</div>
+      <a class="card" href="https://news.google.com/search?q=${encodeURIComponent(q)}&hl=en&gl=${gl}" target="_blank" rel="noopener noreferrer">
+        <h3>Click here to view ${q} news directly on Google News (${gl})</h3>
+        <div class="meta"><span>External Link</span><span>Tap to open</span></div>
+      </a>
+    `;
   }
-  document.getElementById('clock').innerText=new Date().toLocaleTimeString();
+
+  document.getElementById('clock').innerText = new Date().toLocaleTimeString();
 }
 
 loadNews();
 setInterval(loadNews, 180000);
 </script>
+
 </body>
-  </html>
+</html>
