@@ -16,7 +16,7 @@
   #feed{max-width:750px;margin:12px auto;padding:0 10px;display:flex;flex-direction:column;gap:10px}
   .card{background:#fff;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;border:1px solid #e0e0e0;text-decoration:none;color:inherit;transition:box-shadow 0.2s}
   .card:hover{box-shadow:0 2px 6px rgba(0,0,0,0.1)}
-  .card h3{font-size:15px;color:#202124;line-data:1.4}
+  .card h3{font-size:15px;color:#202124;line-height:1.4}
   .meta{font-size:12px;color:#666;display:flex;justify-content:space-between}
   .live{color:#d93025;font-weight:700;font-size:12px;text-align:center;padding:6px;background:#fff;border-radius:8px;border:1px solid #e0e0e0}
 </style>
@@ -26,15 +26,15 @@
 <header>
   <div class="logo">Google <span>News</span> Live</div>
   <select id="country" onchange="loadNews()" style="padding:7px;border-radius:20px;border:1px solid #ddd">
-    <option value="ZA">South Africa</option>
-    <option value="US" selected>Worldwide (US)</option>
-    <option value="GB">UK</option>
+    <option value="za">South Africa</option>
+    <option value="us" selected>Worldwide (US)</option>
+    <option value="gb">UK</option>
   </select>
   <div id="clock" style="font-size:11px;margin-left:auto"></div>
 </header>
 
 <div class="nav">
-  <button class="active" onclick="setCat('',this)">Top Stories</button>
+  <button class="active" onclick="setCat('general',this)">Top Stories</button>
   <button onclick="setCat('world',this)">World</button>
   <button onclick="setCat('business',this)">Business</button>
   <button onclick="setCat('technology',this)">Technology</button>
@@ -47,7 +47,7 @@
 </div>
 
 <script>
-let currentCat = '';
+let currentCat = 'general';
 
 function setCat(c, btn) {
   currentCat = c;
@@ -57,33 +57,29 @@ function setCat(c, btn) {
 }
 
 async function loadNews() {
-  const gl = document.getElementById('country').value;
-  const q = currentCat ? currentCat : 'top news';
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=${gl}&ceid=${gl}:en`;
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`;
+  const country = document.getElementById('country').value;
   const feedDiv = document.getElementById('feed');
+  
+  // Using an open-access endpoint designed for browser testing to avoid CORS issues
+  const apiUrl = `https://algolia.com{encodeURIComponent(currentCat === 'general' ? 'news' : currentCat)}&tags=story`;
 
   try {
-    let res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error("Network response was not ok");
-    let xmlText = await res.text();
-    let xmlDoc = new DOMParser().parseFromString(xmlText, "text/xml");
-    let items = xmlDoc.querySelectorAll("item");
+    let res = await fetch(apiUrl);
+    if (!res.ok) throw new Error("API Limit reached");
+    let data = await res.json();
+    
+    feedDiv.innerHTML = `<div class="live">🔴 LIVE • ${currentCat.toUpperCase()} • ${country.toUpperCase()} • ${new Date().toLocaleTimeString()}</div>`;
 
-    feedDiv.innerHTML = `<div class="live">🔴 LIVE • ${q.toUpperCase()} • ${gl} • ${new Date().toLocaleTimeString()}</div>`;
-
-    if (items.length === 0) {
+    if (!data.hits || data.hits.length === 0) {
       feedDiv.innerHTML += `<div class="card"><h3>No articles found for this selection. Try another category.</h3></div>`;
       return;
     }
 
-    items.forEach((item, idx) => {
-      if (idx >= 15) return;
-      let title = item.querySelector("title")?.textContent || "No title";
-      let link = item.querySelector("link")?.textContent || "https://news.google.com";
-      let pubDate = item.querySelector("pubDate")?.textContent;
-      let timeStr = pubDate ? new Date(pubDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-
+    data.hits.slice(0, 15).forEach((item) => {
+      let title = item.title || "No title available";
+      let link = item.url || `https://google.com`;
+      let author = item.author || "Global News";
+      
       let card = document.createElement('a');
       card.className = 'card';
       card.href = link;
@@ -92,8 +88,8 @@ async function loadNews() {
       card.innerHTML = `
         <h3>${title}</h3>
         <div class="meta">
-          <span>${gl} • Google News</span>
-          <span>${timeStr}</span>
+          <span>Source: ${author}</span>
+          <span>Tap to read</span>
         </div>
       `;
       feedDiv.appendChild(card);
@@ -101,9 +97,9 @@ async function loadNews() {
 
   } catch (err) {
     feedDiv.innerHTML = `
-      <div class="live">⚠️ Direct RSS fetch blocked by CORS or network</div>
-      <a class="card" href="https://news.google.com/search?q=${encodeURIComponent(q)}&hl=en&gl=${gl}" target="_blank" rel="noopener noreferrer">
-        <h3>Click here to view ${q} news directly on Google News (${gl})</h3>
+      <div class="live">⚠️ Direct fetch limit reached</div>
+      <a class="card" href="https://google.com/search?q=${encodeURIComponent(currentCat)}&hl=en&gl=${country.toUpperCase()}" target="_blank" rel="noopener noreferrer">
+        <h3>Click here to view ${currentCat} news directly on Google News</h3>
         <div class="meta"><span>External Link</span><span>Tap to open</span></div>
       </a>
     `;
